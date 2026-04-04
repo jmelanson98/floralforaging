@@ -6,3 +6,6 @@ floralforaging.Rproj
 
 ## data for now
 cleandata/
+
+## simulated data (too big to track)
+simulations/floraltest/
