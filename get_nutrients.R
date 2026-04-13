@@ -7,8 +7,9 @@
 library(dplyr)
 library(tidyr)
 library(stringr)
+library(readxl)
 
-bombus_path = "/Users/jenna1/Documents/bombus_project/"
+bombus_path = "/Users/jenna1/Documents/UBC/bombus_project/"
 
 ### Load in floral survey data
 specimenData2022 = as.data.frame(read.csv(paste0(bombus_path, "raw_data/2022specimendata.csv"), sep = ",", header = T))
@@ -19,7 +20,8 @@ plantlist = read.csv(paste0(bombus_path, "raw_data/plant_list.csv"), header = FA
 colnames(plantlist) = c("Plants_Latin_Name", "common_name", "plantcode", "notes")
 
 ### Load in nutrient data
-nutrients = read.csv("floralnutrients.csv")
+nutrients = read.csv("pollendata/floralnutrients.csv")
+roulston = read_excel("pollendata/Roulston_2000_Pollen_Protein_Data.xlsx")
 
 ### Pull out just proteins and lipids
 PL = nutrients[c("Plants_Latin_Name", "Plants_Family", "Proteins_Total_g100g", "Lipids_Total_g100g")]
@@ -104,3 +106,19 @@ genuslevel = genuscompiled[!is.na(genuscompiled$mean_protein),]
 
 # Now what's left?
 plantlist_remaining = plantlist[(!plantlist$plantcode %in% specieslevel$plantcode) & (!plantlist$plantcode %in% genuslevel$plantcode),]
+
+
+# Try with Roulston data?
+
+roulston$genus = stringr::word(roulston$Species, 1)
+roulston$species = stringr::word(roulston$Species, 2)
+
+
+roulston_joined = left_join(plantlist, roulston, by = c("Plants_Latin_Name" = "Species"))
+roulston_spp = roulston_joined[!is.na(roulston_joined$`Protein (%)`),]
+roulston_remaining = plantlist[!plantlist$Plants_Latin_Name %in% roulston_spp$Plants_Latin_Name,]
+
+roulston_genus = roulston %>% 
+  group_by(genus) %>%
+  summarize(avg_protein = mean(`Protein (%)`))
+roulston_joined_genus = left_join(roulston_remaining, roulston_genus, by = "genus")

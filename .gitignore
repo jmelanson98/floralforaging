@@ -9,3 +9,4 @@ cleandata/
 
 ## simulated data (too big to track)
 simulations/floraltest/
+.Rproj.user
