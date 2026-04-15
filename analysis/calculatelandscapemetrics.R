@@ -189,9 +189,16 @@ floralpheno2023 = bind_rows(
   blueblack %>% crossing(julian_date = 146:151),
   allberry %>% crossing(julian_date = 152:162),
   cranblack %>% crossing(julian_date = 163:212),
-  black  %>% crossing(julian_date = 213:233))
+  black  %>% crossing(julian_date = 213:234))
 floralpheno2023$year = 2023
 floralpheno2023$metric = "floweringpercent"
 
 alllandscapemetrics = rbind(iji, floralpheno2022, floralpheno2023)
+alllandscapemetrics$site_name[alllandscapemetrics$site_name == "east_delta"] = "ED"
+alllandscapemetrics$site_name[alllandscapemetrics$site_name == "pitt_meadows"] = "PM"
+alllandscapemetrics$site_name[alllandscapemetrics$site_name == "south_delta"] = "SD"
+alllandscapemetrics$site_name[alllandscapemetrics$site_name == "westham_island"] = "W"
+alllandscapemetrics$site_name[alllandscapemetrics$site_name == "nicomekl_river"] = "NR"
+alllandscapemetrics$site_name[alllandscapemetrics$site_name == "harvey_road"] = "HR"
+
 write.csv(alllandscapemetrics, "analysis/landscapemetrics.csv")

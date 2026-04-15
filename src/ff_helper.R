@@ -252,7 +252,8 @@ prep_stan_floralforaging = function(sibships1,
                                     effort1,
                                     effort2,
                                     veg1,
-                                    veg2){
+                                    veg2,
+                                    landscapemetrics){
   
   # Remove queens and males from sibships
   sibships1 = filter(sibships1, !str_detect(notes, "queen") & 
@@ -299,8 +300,8 @@ prep_stan_floralforaging = function(sibships1,
   
   
   # Get floral abundance estimates
-  specs2022 = read.csv(paste0(bombus_path, "/raw_data/2022specimendata.csv"))
-  specs2023 = read.csv(paste0(bombus_path, "/raw_data/2023specimendata.csv"))
+  specs2022 = read.csv("cleandata/fielddata/2022specimendata.csv")
+  specs2023 = read.csv("cleandata/fielddata/2023specimendata.csv")
   beeflowers = unique(c(specs2022$active_flower, specs2023$active_flower))
   beeflowers = beeflowers[str_detect(beeflowers, "nest|N/A|flying|dipu|road|dead|grass|leaf|ground", negate = T)]
   
@@ -337,9 +338,7 @@ prep_stan_floralforaging = function(sibships1,
   traps_sf_m = st_transform(fv_points, 32610)
   traps_m = data.frame(sample_point = traps_sf_m$site_id,
                        trap_x = st_coordinates(traps_sf_m)[,1],
-                       trap_y = st_coordinates(traps_sf_m)[,2],
-                       site = traps_sf_m$site_name)
-  traps_m$site[traps_m$site == "pit_meadows"] = "pitt_meadows"
+                       trap_y = st_coordinates(traps_sf_m)[,2])
   
   # Get Julian dates
   #add julian date to sample effort data frame
@@ -354,6 +353,15 @@ prep_stan_floralforaging = function(sibships1,
   effort2$julian_date = effort2$date$yday
   
   effort = rbind(effort1[,colnames(effort1) %in% c("sample_id", "julian_date")], effort2[,colnames(effort2) %in% c("sample_id", "julian_date")])
+  
+  # Get landscape metrics
+  iji = landscapemetrics[landscapemetrics$metric == "iji",]
+  iji = iji[c("site_name", "value")]
+  colnames(iji) = c("site", "iji")
+  
+  comp = landscapemetrics[landscapemetrics$metric == "floweringpercent",]
+  comp = comp[c("site_name", "value", "year", "julian_date")]
+  colnames(comp) = c("site", "floweringpercent", "year", "julian_date")
   
   # Get nonzero counts
   counts1 = sibships1 %>%
@@ -378,7 +386,10 @@ prep_stan_floralforaging = function(sibships1,
     left_join(trapkey) %>%
     left_join(floral_df_long) %>%
     left_join(traps_m) %>%
-    left_join(effort)
+    left_join(effort) %>% 
+    left_join(iji) %>%
+    left_join(comp)
+  CKT$counts[is.na(CKT$counts)] = 0 # these are true zeroes
   
   # For each colony, remove rounds where we do not observe it
   CKT = CKT %>%
@@ -387,7 +398,6 @@ prep_stan_floralforaging = function(sibships1,
     arrange(round, stansibkey, sample_point)
   
   # Clean up!
-  CKT$counts[is.na(CKT$counts)] = 0 # these are true zeroes
   CKT$floral_abundance[CKT$floral_abundance == -Inf] = 0 #questionable -- not true zeroes
   CKT$floral_abundance[is.na(CKT$floral_abundance)] = 0 #questionable -- not true zeroes
   CKT$trap_x = as.numeric(CKT$trap_x)/1000
@@ -401,6 +411,13 @@ prep_stan_floralforaging = function(sibships1,
     arrange(round, stansibkey)
   starts = cumsum(c(1, lengths$length))[1:length(lengths$length)]
   
+  # Get colony centers for each site
+  colonycenters = CKT %>%
+    group_by(stansibkey) %>%
+    summarize(center_x = mean(trap_x),
+              center_y = mean(trap_y)) %>%
+    arrange(stansibkey)
+  
   
   # Get stan data!
   data = list(
@@ -413,12 +430,11 @@ prep_stan_floralforaging = function(sibships1,
     trap_pos = cbind(CKT$trap_x, CKT$trap_y),
     colony_id = CKT$stansibkey,
     trap_id = CKT$trap_id,
-    fq = scale(CKT$floral_abundance),
+    fq = CKT$floral_abundance,
+    comp = scale(CKT$floweringpercent, center = TRUE, scale = FALSE),
+    config = scale(CKT$iji, center = TRUE, scale = FALSE),
     yobs = CKT$counts,
-    lower_x = (min(CKT$trap_x) - 5),
-    upper_x = (max(CKT$trap_x) + 5),
-    lower_y = (min(CKT$trap_y) - 5),
-    upper_y = (max(CKT$trap_y) + 5)
+    colonycenters = colonycenters[,2:3]
   )
   
   return(list(data, CKT, traps_m))

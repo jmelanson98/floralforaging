@@ -11,7 +11,8 @@ data {
   int colony_id[O];              // colony id for each observation
   int trap_id[O];                 // trap id for each observation
   vector[O] fq;                      // floral quality for each observation
-  vector[O] lq;                   // landscape quality for each observation
+  vector[O] comp;                   // landscape composition for each observation
+  vector[O] config;                // landscape configuration for each observation
   int yobs[O];                   // number of individuals observed
   //real rhomax;                   // maximum foraging distance
   array[C,2] real colonycenters;      // site specific bounds on colonies
@@ -69,8 +70,8 @@ model {
                        square(delta_y[colony_id[start]] - trap_pos[start:start+length-1,2]) );
     vector[length] rho = rhomax*inv_logit(rho0 + 
                           rho1*fq[start:start+length-1] +
-                          rho2*lq[start:start+length-1] +
-                          rho3*fq[start:start+length-1].*lq[start:start+length-1]);
+                          rho2*comp[start:start+length-1] +
+                          rho3*config[start:start+length-1]);
     vector[length] lambda_it = (-(dis^2) ./ rho) + eps_scale[trap_id[start:start+length-1]];
 
     

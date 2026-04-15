@@ -1,0 +1,91 @@
+##### Data cleaning script
+### April 15, 2026
+### J Melanson
+
+
+### Load in packages
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(readxl)
+library(ggplot2)
+
+###################################################
+### Load in data
+###################################################
+bombus_path = "/Users/jenna1/Documents/UBC/bombus_project/"
+mix2022 = read.csv(paste0(bombus_path, "raw_data/siblingships/mixtus_sibships_2022.csv"))
+mix2023 = read.csv(paste0(bombus_path, "raw_data/siblingships/mixtus_sibships_2023.csv"))
+imp2022 = read.csv(paste0(bombus_path, "raw_data/siblingships/impatiens_sibships_2022.csv"))
+imp2023 = read.csv(paste0(bombus_path, "raw_data/siblingships/impatiens_sibships_2023.csv"))
+specimenData2022 = as.data.frame(read.csv(paste0(bombus_path, "raw_data/2022specimendata.csv"), sep = ",", header = T))
+specimenData2023 = as.data.frame(read.csv(paste0(bombus_path, "raw_data/2023specimendata.csv"), sep = ",", header = T))
+vegData2022 = as.data.frame(read.csv(paste0(bombus_path, "raw_data/2022vegetationdata.csv"), sep = ",", header = T))
+vegData2023 = as.data.frame(read.csv(paste0(bombus_path, "raw_data/2023vegetationdata.csv"), sep = ",", header = T))
+sampleData2022 = as.data.frame(read.csv(paste0(bombus_path, "raw_data/2022sampledata.csv"), sep = ",", header = T))
+sampleData2023 = as.data.frame(read.csv(paste0(bombus_path, "raw_data/2023sampledata.csv"), sep = ",", header = T))
+samplepoints = as.data.frame(read.csv(paste0(bombus_path, "raw_data/allsamplepoints.csv"), sep = ",", header = F))
+landscape_metrics = read.csv("analysis/landscapemetrics.csv")
+landscape_metrics$X = NULL
+fv_points = st_read(paste0(bombus_path, "landscape/fvbombus/fvbombus_points.shp"))
+fv_points = st_transform(fv_points, 32610)
+
+
+###################################################
+### Combine close together sampling location
+###################################################
+
+# Combine sampling locations which are < 25m apart (e.g., transect was renamed in datasheet)
+# targeting PM, where some transects were re-named after round 1
+traps_m = data.frame(sample_point = fv_points$site_id,
+                     trap_x = st_coordinates(fv_points)[,1],
+                     trap_y = st_coordinates(fv_points)[,2])
+dist_matrix = as.matrix(dist(traps_m[, c("trap_x", "trap_y")]))
+pairs = which(dist_matrix < 20 & lower.tri(dist_matrix), arr.ind = TRUE)
+
+close_pairs = data.frame(
+  name1 = fv_points$site_id[pairs[, 1]],
+  name2 = fv_points$site_id[pairs[, 2]],
+  distance_m = dist_matrix[pairs])
+
+# Rename sample points in ALL data sets
+for (row in 1:nrow(close_pairs)){
+  mix2022$sample_pt[mix2022$sample_pt == close_pairs$name2[row]] = close_pairs$name1[row]
+  mix2023$sample_pt[mix2023$sample_pt == close_pairs$name2[row]] = close_pairs$name1[row]
+  imp2022$sample_pt[imp2022$sample_pt == close_pairs$name2[row]] = close_pairs$name1[row]
+  imp2023$sample_pt[imp2023$sample_pt == close_pairs$name2[row]] = close_pairs$name1[row]
+  specimenData2022$sample_pt[specimenData2022$sample_pt == close_pairs$name2[row]] = close_pairs$name1[row]
+  specimenData2023$sample_pt[specimenData2023$sample_pt == close_pairs$name2[row]] = close_pairs$name1[row]
+  vegData2022$sample_point[vegData2022$sample_point == close_pairs$name2[row]] = close_pairs$name1[row]
+  vegData2023$sample_point[vegData2023$sample_point == close_pairs$name2[row]] = close_pairs$name1[row]
+  sampleData2022$sample_point[sampleData2022$sample_point == close_pairs$name2[row]] = close_pairs$name1[row]
+  sampleData2023$sample_point[sampleData2023$sample_point == close_pairs$name2[row]] = close_pairs$name1[row]
+}
+
+
+###################################################
+### Clean a couple of incorrect values
+###################################################
+# clean two floral values which were mis-entered from datasheets
+vegData2023$TRRE[vegData2023$sample_id == "18_PM51"] = 2
+vegData2023$VICR[vegData2023$sample_id == "18_SD28"] = 2
+
+# fix one mixtus final_id
+mix2022$final_id[mix2022$barcode_id == "W14_19_01"] = "B. mixtus"
+
+
+
+###################################################
+### Write new files
+###################################################
+write.csv(mix2022, "cleandata/siblingships/mixtus_sibships_2022.csv")
+write.csv(mix2023, "cleandata/siblingships/mixtus_sibships_2023.csv")
+write.csv(imp2022, "cleandata/siblingships/impatiens_sibships_2022.csv")
+write.csv(imp2023, "cleandata/siblingships/impatiens_sibships_2023.csv")
+
+write.csv(specimenData2022, "cleandata/fielddata/2022specimendata.csv")
+write.csv(specimenData2023, "cleandata/fielddata/2023specimendata.csv")
+write.csv(sampleData2022, "cleandata/fielddata/2022sampledata.csv")
+write.csv(sampleData2023, "cleandata/fielddata/2023sampledata.csv")
+write.csv(vegData2022, "cleandata/fielddata/2022vegetationdata.csv")
+write.csv(vegData2023, "cleandata/fielddata/2023vegetationdata.csv")
