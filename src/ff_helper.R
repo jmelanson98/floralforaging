@@ -295,8 +295,6 @@ prep_stan_floralforaging = function(sibships1,
   # here we want a different random intercept for each trap x year combo
   # trap "quality" may differ between year so we treat them as unique traps
   CKT$trapyear = paste0(CKT$sample_point, CKT$year)
-  trapkey = data.frame(trapyear = sort(unique(CKT$trapyear)),
-                       trap_id = 1:length(unique(CKT$trapyear)))
   
   
   # Get floral abundance estimates
@@ -383,7 +381,6 @@ prep_stan_floralforaging = function(sibships1,
   CKT = CKT %>%
     left_join(counts) %>%
     left_join(sitekey) %>%
-    left_join(trapkey) %>%
     left_join(floral_df_long) %>%
     left_join(traps_m) %>%
     left_join(effort) %>% 
@@ -396,6 +393,11 @@ prep_stan_floralforaging = function(sibships1,
     group_by(stansibkey, round) %>%
     filter(sum(counts) > 0) %>%
     arrange(round, stansibkey, sample_point)
+  
+  # Create and add trap key
+  trapkey = data.frame(trapyear = sort(unique(CKT$trapyear)),
+                       trap_id = 1:length(unique(CKT$trapyear)))
+  CKT = left_join(CKT, trapkey)
   
   # Clean up!
   CKT$floral_abundance[CKT$floral_abundance == -Inf] = 0 #questionable -- not true zeroes
@@ -431,8 +433,8 @@ prep_stan_floralforaging = function(sibships1,
     colony_id = CKT$stansibkey,
     trap_id = CKT$trap_id,
     fq = CKT$floral_abundance,
-    comp = scale(CKT$floweringpercent, center = TRUE, scale = FALSE),
-    config = scale(CKT$iji, center = TRUE, scale = FALSE),
+    comp = as.vector(scale(CKT$floweringpercent, center = TRUE, scale = FALSE)),
+    config = as.vector(scale(CKT$iji, center = TRUE, scale = FALSE)),
     yobs = CKT$counts,
     colonycenters = colonycenters[,2:3]
   )
