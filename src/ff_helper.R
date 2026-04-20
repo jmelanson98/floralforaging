@@ -253,7 +253,8 @@ prep_stan_floralforaging = function(sibships1,
                                     effort2,
                                     veg1,
                                     veg2,
-                                    landscapemetrics){
+                                    landscapemetrics,
+                                    pollenprotein){
   
   # Remove queens and males from sibships
   sibships1 = filter(sibships1, !str_detect(notes, "queen") & 
@@ -315,6 +316,12 @@ prep_stan_floralforaging = function(sibships1,
     summarize(floral_abundance = sum(floral_abundance, na.rm = TRUE)) %>%
     mutate(across(-c(sample_id),
                   ~ log10(.)))
+  max_prot_long1 = floral_df_wide %>%
+    pivot_longer(!c(sample_id), names_to = "plant_code", values_to = "floral_abundance") %>%
+    filter(!is.na(floral_abundance)) %>%
+    left_join(pollenprotein, by = "plant_code") %>%
+    group_by(sample_id) %>%
+    summarize(max_protein = max(prot_scaled, na.rm = TRUE))
   
   floral_df_wide = veg2[,colnames(veg2) %in% columnlist]
   floral_df_long2 = floral_df_wide %>%
@@ -328,7 +335,15 @@ prep_stan_floralforaging = function(sibships1,
     mutate(across(-c(sample_id),
                   ~ log10(.)))
   
+  max_prot_long2 = floral_df_wide %>%
+    pivot_longer(!c(sample_id), names_to = "plant_code", values_to = "floral_abundance") %>%
+    filter(!is.na(floral_abundance)) %>%
+    left_join(pollenprotein, by = "plant_code") %>%
+    group_by(sample_id) %>%
+    summarize(max_protein = max(prot_scaled, na.rm = TRUE))
+  
   floral_df_long = rbind(floral_df_long1, floral_df_long2)
+  max_prot_long = rbind(max_prot_long1, max_prot_long2)
   
   
   # Get trap coordinates
@@ -354,11 +369,11 @@ prep_stan_floralforaging = function(sibships1,
   
   # Get landscape metrics
   iji = landscapemetrics[landscapemetrics$metric == "iji",]
-  iji = iji[c("site_name", "value")]
+  iji = iji[c("site_name", "value_scaled")]
   colnames(iji) = c("site", "iji")
   
   comp = landscapemetrics[landscapemetrics$metric == "floweringpercent",]
-  comp = comp[c("site_name", "value", "year", "julian_date")]
+  comp = comp[c("site_name", "value_scaled", "year", "julian_date")]
   colnames(comp) = c("site", "floweringpercent", "year", "julian_date")
   
   # Get nonzero counts
@@ -382,6 +397,7 @@ prep_stan_floralforaging = function(sibships1,
     left_join(counts) %>%
     left_join(sitekey) %>%
     left_join(floral_df_long) %>%
+    left_join(max_prot_long) %>%
     left_join(traps_m) %>%
     left_join(effort) %>% 
     left_join(iji) %>%
@@ -402,6 +418,7 @@ prep_stan_floralforaging = function(sibships1,
   # Clean up!
   CKT$floral_abundance[CKT$floral_abundance == -Inf] = 0 #questionable -- not true zeroes
   CKT$floral_abundance[is.na(CKT$floral_abundance)] = 0 #questionable -- not true zeroes
+  CKT$max_protein[is.na(CKT$max_protein)] = 0 # realzeros
   CKT$trap_x = as.numeric(CKT$trap_x)/1000
   CKT$trap_y = as.numeric(CKT$trap_y)/1000
   
@@ -433,8 +450,9 @@ prep_stan_floralforaging = function(sibships1,
     colony_id = CKT$stansibkey,
     trap_id = CKT$trap_id,
     fq = CKT$floral_abundance,
-    comp = as.vector(scale(CKT$floweringpercent, center = TRUE, scale = FALSE)),
-    config = as.vector(scale(CKT$iji, center = TRUE, scale = FALSE)),
+    mp = CKT$max_protein,
+    comp = CKT$floweringpercent,
+    config = CKT$iji, # center at zero wrt original measurements
     yobs = CKT$counts,
     colonycenters = colonycenters[,2:3]
   )

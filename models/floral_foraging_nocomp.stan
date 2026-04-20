@@ -12,7 +12,6 @@ data {
   int trap_id[O];                 // trap id for each observation
   vector[O] fq;                      // floral quality for each observation
   vector[O] mp;                     // max protein content of flowers at each observation
-  vector[O] comp;                   // landscape composition for each observation
   vector[O] config;                // landscape configuration for each observation
   int yobs[O];                   // number of individuals observed
   //real rhomax;                   // maximum foraging distance
@@ -24,8 +23,7 @@ parameters {
   real <lower=0> rhomax;
   real rho0; 
   real rho_fq; 
-  real rho_mp; 
-  real rho_comp;
+  real rho_mp;
   real rho_config;
   real<lower=0> sigma;
   vector[K] eps;
@@ -54,11 +52,10 @@ model {
   // set priors
   delta_x_raw ~ normal(0,deltaprior);
   delta_y_raw ~ normal(0,deltaprior);
-  rhomax ~ normal(0,0.5);
+  rhomax ~ normal(0,1);
   rho0 ~ normal(0,0.1);
   rho_fq ~ normal(0,1);
   rho_mp ~ normal(0,1);
-  rho_comp ~ normal(0,1);
   rho_config ~ normal(0,1);
   sigma ~ normal(0, 1);
   eps ~ normal(0, 1);
@@ -74,7 +71,6 @@ model {
     vector[length] rho = rhomax*inv_logit(rho0 + 
                           rho_fq*fq[start:start+length-1] +
                           rho_mp*mp[start:start+length-1] +
-                          rho_comp*comp[start:start+length-1] +
                           rho_config*config[start:start+length-1]);
     vector[length] lambda_it = (-dis ./ rho) + eps_scale[trap_id[start:start+length-1]];
 

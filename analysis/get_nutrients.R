@@ -39,8 +39,16 @@ other = read.csv("pollendata/other.csv")
 ###################################################
 observedplants = observedplants[c("scientific_name", "common_name", "plant_code")]
 
+# GNA verifier function (safe version)
+gna_verifier_safe = function(names, batch_size = 50) {
+  do.call(rbind, lapply(seq(1, length(names), by = batch_size), function(i) {
+    gna_verifier(names[i:min(i + batch_size - 1, length(names))])
+  }))
+}
+
+
 # Get canonical names
-resolved = gna_verifier(observedplants$scientific_name)
+resolved = gna_verifier_safe(observedplants$scientific_name)
 
 resolved_df = tibble(
   input_plants     = observedplants$scientific_name,
@@ -142,13 +150,16 @@ tayberry_row = tibble(
   order         = "Rosales",
   family        = "Rosaceae",
   genus         = "Rubus",
-  species       = NA)   # no species epithet --- hybrid
+  species       = NA,
+  authority = NA)   # no species epithet --- hybrid
 taxonomy_df = rbind(taxonomy_df, tayberry_row)
 taxonomy_df = distinct(taxonomy_df)
 
 # join back to original data
 observedplants = observedplants %>%
   left_join(taxonomy_df, by = c("scientific_name" = "input_plants"))
+
+observedplants$family[observedplants$scientific_name == "Hosta spp."] = "Asparagaceae"
 
 
 ###################################################
@@ -163,7 +174,7 @@ tissier1_prot$scientific_name[tissier1_prot$scientific_name == "Curcubita pepo T
 tissier1_prot = filter(tissier1_prot, !is.na(scientific_name) & scientific_name != "")
 tissier1_prot = tissier1_prot[str_detect(tissier1_prot$scientific_name, "%", negate = T),]
 tissier1_prot = tissier1_prot[str_detect(tissier1_prot$scientific_name, "Mix", negate = T),]
-tissier1_resolved = gna_verifier(tissier1_prot$scientific_name)
+tissier1_resolved = gna_verifier_safe(tissier1_prot$scientific_name)
 t1_resolved_df = tibble(
   input_plants     = tissier1_prot$scientific_name,
   canonicalname    = tissier1_resolved$matchedCanonicalFull)
@@ -176,7 +187,7 @@ tissier1_prot = left_join(tissier1_prot, t1keep, by = c("scientific_name" = "inp
 
 tissier2_prot = tissier2[c("Pollen_species", "Proteins_g100g")]
 colnames(tissier2_prot) = c("scientific_name", "protein_percent")
-tissier2_resolved = gna_verifier(tissier2_prot$scientific_name)
+tissier2_resolved = gna_verifier_safe(tissier2_prot$scientific_name)
 t2_resolved_df = tibble(
   input_plants     = tissier2_prot$scientific_name,
   canonicalname    = tissier2_resolved$matchedCanonicalFull)
@@ -191,7 +202,7 @@ tissier2_prot = left_join(tissier2_prot, t2keep, by = c("scientific_name" = "inp
 roulston_prot = roulston[c("Species", "Protein....")]
 colnames(roulston_prot) = c("scientific_name", "protein_percent")
 roulston_prot$scientific_name[roulston_prot$scientific_name == "Anemopaegna sp."] = "Anemopaegma sp."
-roulston_resolved = gna_verifier(roulston_prot$scientific_name)
+roulston_resolved = gna_verifier_safe(roulston_prot$scientific_name)
 r_resolved_df = tibble(
   input_plants     = roulston_prot$scientific_name,
   canonicalname    = roulston_resolved$matchedCanonicalFull)
@@ -214,7 +225,7 @@ colnames(pamminger_prot) = c("scientific_name", "protein_percent")
 pamminger_prot$scientific_name[pamminger_prot$scientific_name == "Majoranum sp."] = "Origanum majorana"
 pamminger_prot$scientific_name[pamminger_prot$scientific_name == "Helianthus anuus"] = "Helianthus annus"
 pamminger_prot$scientific_name[pamminger_prot$scientific_name == "Vitacea spp."] = "Vitaceae spp."
-pamminger_resolved = gna_verifier(pamminger_prot$scientific_name)
+pamminger_resolved = gna_verifier_safe(pamminger_prot$scientific_name)
 p_resolved_df = tibble(
   input_plants     = pamminger_prot$scientific_name,
   canonicalname    = pamminger_resolved$matchedCanonicalFull)
@@ -230,7 +241,7 @@ pamminger_prot = left_join(pamminger_prot, pkeep, by = c("scientific_name" = "in
 other_prot = other[c("scientific_name", "protein_percentage")]
 colnames(other_prot) = c("scientific_name", "protein_percent")
 other_prot$scientific_name = paste(stringr::word(other_prot$scientific_name, 1), stringr::word(other_prot$scientific_name, 2), sep = " ")
-other_resolved = gna_verifier(other_prot$scientific_name)
+other_resolved = gna_verifier_safe(other_prot$scientific_name)
 o_resolved_df = tibble(
   input_plants     = other_prot$scientific_name,
   canonicalname    = other_resolved$matchedCanonicalFull)
@@ -333,7 +344,25 @@ compiled_roulston = left_join(visitedplants, roulston_family, by = "family")
 compiled_all = left_join(visitedplants, all_family, by = "family")
 # 91% coverage
 
+# plot family data just on visited plants
+protbyfamily_visited = ggplot(alldata[alldata$family %in% compiled_all$family,], aes(y = reorder(family, avg_protein, mean), x = avg_protein, colour = dataset)) +
+  geom_jitter(width = 0.2, height = 0, alpha = 0.5) +
+  scale_colour_manual(values = c("coral", "darkgreen", "navy", "orange")) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "black") +
+  ylab("Family") +
+  xlab("Percent protein") +
+  theme_bw()
+ggsave("figures/protein_by_family_visited.png", protbyfamily_visited, height = 4000, width = 3000, units = "px")
 
+
+# For NA species, fill with average across all observed plants
+avg = mean(compiled_all$prot, na.rm = TRUE)
+compiled_all$prot[is.na(compiled_all$prot)] = avg
+
+compiled_all$prot_scaled = as.vector(scale(compiled_all$prot, center = TRUE, scale = TRUE))
+
+# Save protein by family data
+write.csv(compiled_all, "cleandata/plantdata/proteinbyfamily.csv")
 
 ###################################################
 ### Check visitation percentage per family

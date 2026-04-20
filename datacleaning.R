@@ -16,7 +16,7 @@ library(terra)
 ### Load in data
 ###################################################
 bombus_path = "/Users/jenna1/Documents/UBC/bombus_project/"
-bombus_path = "/Users/jenna1/Documents/bombus_project/"
+#bombus_path = "/Users/jenna1/Documents/bombus_project/"
 mix2022 = read.csv(paste0(bombus_path, "raw_data/siblingships/mixtus_sibships_2022.csv"))
 mix2023 = read.csv(paste0(bombus_path, "raw_data/siblingships/mixtus_sibships_2023.csv"))
 imp2022 = read.csv(paste0(bombus_path, "raw_data/siblingships/impatiens_sibships_2022.csv"))
@@ -98,7 +98,7 @@ write.csv(vegData2023, "cleandata/fielddata/2023vegetationdata.csv")
 ###################################################
 ### Clean plant list
 ###################################################
-plantlist = read.csv(paste0(bombus_path, "raw_data/plant_list.csv"), header = FALSE)
+plantlist = read.csv(paste0(bombus_path, "raw_data/plantcodes.csv"), header = FALSE)
 colnames(plantlist) = c("scientific_name", "common_name", "plant_code", "notes")
 
 # Clean plant list
@@ -125,6 +125,11 @@ plantlist$scientific_name[plantlist$scientific_name == "Brassica napus va pabula
 plantlist$scientific_name[plantlist$scientific_name == "Convolvulus vulgaris"] = "Convolvulus arvensis" # synonym
 plantlist$scientific_name[plantlist$scientific_name == "China Rose"] = "Rosa chinensis"
 plantlist$scientific_name[plantlist$scientific_name == "Rosa chinensis"] = "China Rose"
+plantlist$scientific_name[plantlist$scientific_name == "Curcurbita spp."] = "Cucurbita spp."
+plantlist$scientific_name[plantlist$scientific_name == "Tripleospermum spp."] = "Tripleurospermum spp."
+plantlist$scientific_name[plantlist$scientific_name == "Allioideae spp."] = "Alliaceae" # GBIF chokes on Allioideae, but finds the old name (Alliaceae)
+plantlist$scientific_name[plantlist$scientific_name == "Maleae spp."] = "Rosaceae" # GBIF chokes on Maleae tribe, so go up to family
+
 
 plantlist = plantlist[!plantlist$plant_code %in% c("dead", "flying", "Monocotyledon", "ALMA", "CRDU"),]
 plantlist = plantlist[!plantlist$scientific_name == "",]

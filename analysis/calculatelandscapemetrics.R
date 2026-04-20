@@ -104,6 +104,7 @@ allmetrics = fv_points %>%
 iji = allmetrics %>% filter(metric == "iji")
 iji = iji[c("site_name", "metric", "value")]
 iji$year = NA
+iji$value_scaled = as.vector(scale(iji$value, center = TRUE, scale = TRUE))
 
 comp = allmetrics %>% filter(metric != "iji")
 
@@ -127,7 +128,7 @@ comp = allmetrics %>% filter(metric != "iji")
 # plus permanent habitats
 
 # no crops, all season
-nocrops = none = comp %>%
+nocrops = comp %>%
   filter(class %in% c(1, 4, 5, 7, 9, 14, 15, 17)) %>%
   group_by(site_name) %>%
   summarize(value = sum(value))
@@ -198,8 +199,10 @@ floralpheno2023 = bind_rows(
   black  %>% crossing(julian_date = 213:234))
 floralpheno2023$year = 2023
 floralpheno2023$metric = "floweringpercent"
+floralpheno = rbind(floralpheno2022, floralpheno2023)
+floralpheno$value_scaled = as.vector(scale(floralpheno$value, center = TRUE, scale = TRUE))
 
-alllandscapemetrics = rbind(iji, floralpheno2022, floralpheno2023)
+alllandscapemetrics = rbind(iji, floralpheno)
 alllandscapemetrics$site_name[alllandscapemetrics$site_name == "east_delta"] = "ED"
 alllandscapemetrics$site_name[alllandscapemetrics$site_name == "pitt_meadows"] = "PM"
 alllandscapemetrics$site_name[alllandscapemetrics$site_name == "south_delta"] = "SD"
@@ -210,7 +213,31 @@ alllandscapemetrics$site_name[alllandscapemetrics$site_name == "harvey_road"] = 
 write.csv(alllandscapemetrics, "analysis/landscapemetrics.csv")
 
 
+# get by phenology
+ijipheno2022 = bind_rows(iji %>% crossing(julian_date = 129:233))
+ijipheno2022$year = 2022
+ijipheno2022 = ijipheno2022[c("site_name", "value", "year", "julian_date")]
+colnames(ijipheno2022) = c("site", "iji", "year", "julian_date")
 
+ijipheno2023 = bind_rows(iji %>% crossing(julian_date = 81:234))
+ijipheno2023$year = 2023
+ijipheno2023 = ijipheno2023[c("site_name", "value", "year", "julian_date")]
+colnames(ijipheno2023) = c("site", "iji", "year", "julian_date")
+
+ijipheno = rbind(ijipheno2022, ijipheno2023)
+
+floralpheno = rbind(floralpheno2022, floralpheno2023)
+floralpheno = floralpheno[c("site_name", "value", "julian_date", "year")]
+colnames(floralpheno) = c("site", "comp", "julian_date", "year")
+
+pheno = left_join(ijipheno, floralpheno)
+
+
+
+
+#######################################
+# Save no crops / no phenology values
+#######################################
 nocrops2022 = bind_rows(
   nocrops  %>% crossing(julian_date = 129:233))
 nocrops2022$year = 2022
@@ -222,8 +249,10 @@ nocrops2023 = bind_rows(
 nocrops2023$year = 2023
 nocrops2023$metric = "floweringpercent"
 
+nocrops = rbind(nocrops2022, nocrops2023)
+nocrops$value_scaled = as.vector(scale(nocrops$value, scale = TRUE, center = TRUE))
 
-metricswocrops = rbind(iji, nocrops2022, nocrops2023)
+metricswocrops = rbind(iji, nocrops)
 metricswocrops$site_name[metricswocrops$site_name == "east_delta"] = "ED"
 metricswocrops$site_name[metricswocrops$site_name == "pitt_meadows"] = "PM"
 metricswocrops$site_name[metricswocrops$site_name == "south_delta"] = "SD"
