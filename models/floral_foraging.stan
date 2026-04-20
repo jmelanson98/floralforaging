@@ -72,7 +72,7 @@ model {
                           rho1*fq[start:start+length-1] +
                           rho2*comp[start:start+length-1] +
                           rho3*config[start:start+length-1]);
-    vector[length] lambda_it = (-(dis^2) ./ rho) + eps_scale[trap_id[start:start+length-1]];
+    vector[length] lambda_it = (-dis ./ rho) + eps_scale[trap_id[start:start+length-1]];
 
     
     // compute multinomial probabilities and add to target likelihood

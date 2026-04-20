@@ -14,7 +14,7 @@ library(raster)
 library(sf)
 library(landscapemetrics)
 
-bombus_path = "/Users/jenna1/Documents/UBC/bombus_project/"
+bombus_path = "/Users/jenna1/Documents/bombus_project/"
 
 #####################################################
 # Load and floral survey data
@@ -126,6 +126,12 @@ comp = allmetrics %>% filter(metric != "iji")
 # none, blueberry, blue+cran, blue+black, all, black+cran, black
 # plus permanent habitats
 
+# no crops, all season
+nocrops = none = comp %>%
+  filter(class %in% c(1, 4, 5, 7, 9, 14, 15, 17)) %>%
+  group_by(site_name) %>%
+  summarize(value = sum(value))
+
 # no berries
 none = comp %>%
   filter(class %in% c(4, 5, 7, 9, 14, 15, 17)) %>%
@@ -202,3 +208,26 @@ alllandscapemetrics$site_name[alllandscapemetrics$site_name == "nicomekl_river"]
 alllandscapemetrics$site_name[alllandscapemetrics$site_name == "harvey_road"] = "HR"
 
 write.csv(alllandscapemetrics, "analysis/landscapemetrics.csv")
+
+
+
+nocrops2022 = bind_rows(
+  nocrops  %>% crossing(julian_date = 129:233))
+nocrops2022$year = 2022
+nocrops2022$metric = "floweringpercent"
+
+
+nocrops2023 = bind_rows(
+  nocrops  %>% crossing(julian_date = 81:234))
+nocrops2023$year = 2023
+nocrops2023$metric = "floweringpercent"
+
+
+metricswocrops = rbind(iji, nocrops2022, nocrops2023)
+metricswocrops$site_name[metricswocrops$site_name == "east_delta"] = "ED"
+metricswocrops$site_name[metricswocrops$site_name == "pitt_meadows"] = "PM"
+metricswocrops$site_name[metricswocrops$site_name == "south_delta"] = "SD"
+metricswocrops$site_name[metricswocrops$site_name == "westham_island"] = "W"
+metricswocrops$site_name[metricswocrops$site_name == "nicomekl_river"] = "NR"
+metricswocrops$site_name[metricswocrops$site_name == "harvey_road"] = "HR"
+write.csv(metricswocrops, "analysis/landscapemetrics_nocrops.csv")

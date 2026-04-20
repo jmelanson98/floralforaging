@@ -9,11 +9,14 @@ library(tidyr)
 library(stringr)
 library(readxl)
 library(ggplot2)
+library(sf)
+library(terra)
 
 ###################################################
 ### Load in data
 ###################################################
 bombus_path = "/Users/jenna1/Documents/UBC/bombus_project/"
+bombus_path = "/Users/jenna1/Documents/bombus_project/"
 mix2022 = read.csv(paste0(bombus_path, "raw_data/siblingships/mixtus_sibships_2022.csv"))
 mix2023 = read.csv(paste0(bombus_path, "raw_data/siblingships/mixtus_sibships_2023.csv"))
 imp2022 = read.csv(paste0(bombus_path, "raw_data/siblingships/impatiens_sibships_2022.csv"))
@@ -89,3 +92,42 @@ write.csv(sampleData2022, "cleandata/fielddata/2022sampledata.csv")
 write.csv(sampleData2023, "cleandata/fielddata/2023sampledata.csv")
 write.csv(vegData2022, "cleandata/fielddata/2022vegetationdata.csv")
 write.csv(vegData2023, "cleandata/fielddata/2023vegetationdata.csv")
+
+
+
+###################################################
+### Clean plant list
+###################################################
+plantlist = read.csv(paste0(bombus_path, "raw_data/plant_list.csv"), header = FALSE)
+colnames(plantlist) = c("scientific_name", "common_name", "plant_code", "notes")
+
+# Clean plant list
+plantlist$scientific_name[plantlist$scientific_name == "Aescules x carnea"] = "Aescules carnea"
+plantlist$scientific_name[plantlist$scientific_name == "Convolvulus vulgaris?"] = "Convolvulus vulgaris"
+plantlist$scientific_name[plantlist$scientific_name == "Crocosmia × crocosmiiflora"] = "Crocosmia crocosmiiflora"
+plantlist$scientific_name[plantlist$scientific_name == "Geranium x oxonianum"] = "Geranium oxonianum"
+plantlist$scientific_name[plantlist$scientific_name == "Glandularia x hybrida"] = "Glandularia hybrida"
+plantlist$scientific_name[plantlist$scientific_name == "Hemerocallis x hybridis"] = "Hemerocallis hybridis"
+plantlist$scientific_name[plantlist$scientific_name == "Iris x germanica"] = "Iris germanica"
+plantlist$scientific_name[plantlist$scientific_name == "Lavandula x intermedia"] = "Lavandula intermedia"
+plantlist$scientific_name[plantlist$scientific_name == "Leucanthemum x superbum"] = "Leucanthemum superbum"
+plantlist$scientific_name[plantlist$scientific_name == "Magnolia × soulangeana"] = "Magnolia soulangeana"
+plantlist$scientific_name[plantlist$scientific_name == "Mentha × piperita"] = "Mentha piperita"
+plantlist$scientific_name[plantlist$scientific_name == "Petunia x atkinsiana"] = "Petunia atkinsiana"
+plantlist$scientific_name[plantlist$scientific_name == "Pelargonium x hortorum"] = "Pelargonium hortorum"
+plantlist$scientific_name[plantlist$scientific_name == "Pelargonium x hybridum"] = "Pelargonium hybridum"
+plantlist$scientific_name[plantlist$scientific_name == "Photinia x fraseri"] = "Photinia fraseri"
+plantlist$scientific_name[plantlist$scientific_name == "Rosa × damascena"] = "Rosa damascena"
+plantlist$scientific_name[plantlist$scientific_name == "Aescules carnea"] = "Aesculus carnea"
+plantlist$scientific_name[plantlist$scientific_name == "Calibrchoa hybrida"] = "Calibrachoa hybrida"
+plantlist$scientific_name[plantlist$scientific_name == "Salomus valerandi"] = "Samolus valerandi"
+plantlist$scientific_name[plantlist$scientific_name == "Brassica napus va pabularia"] = "Brassica napus"
+plantlist$scientific_name[plantlist$scientific_name == "Convolvulus vulgaris"] = "Convolvulus arvensis" # synonym
+plantlist$scientific_name[plantlist$scientific_name == "China Rose"] = "Rosa chinensis"
+plantlist$scientific_name[plantlist$scientific_name == "Rosa chinensis"] = "China Rose"
+
+plantlist = plantlist[!plantlist$plant_code %in% c("dead", "flying", "Monocotyledon", "ALMA", "CRDU"),]
+plantlist = plantlist[!plantlist$scientific_name == "",]
+
+write.csv(plantlist, "cleandata/plantdata/observedplants.csv", row.names = FALSE)
+
