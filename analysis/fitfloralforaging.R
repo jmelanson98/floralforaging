@@ -164,7 +164,7 @@ if (task_id == 1){
                         chains = 4, cores = 4,
                         iter = 4000, warmup = 1000,
                         verbose = TRUE)
-  saveRDS(fitmix_nocomporpoll, "analysis/floralfit_mixtus_nocomporpoll.rds")
+  saveRDS(fitmix_nocomporpoll, "analysis/stanfits/floralfit_mixtus_nocomporpoll.rds")
   
 } else if(task_id == 6){
   stanfile = "models/floral_foraging_nocomp_noprot.stan"
@@ -189,7 +189,7 @@ if (task_id == 1){
                         chains = 4, cores = 4,
                         iter = 4000, warmup = 1000,
                         verbose = TRUE)
-  saveRDS(fitimp_nocomporpoll, "analysis/floralfit_impatiens_nocomporpoll.rds")
+  saveRDS(fitimp_nocomporpoll, "analysis/stanfits/floralfit_impatiens_nocomporpoll.rds")
   
 } else if (task_id == 7){
   
@@ -254,4 +254,4 @@ if (task_id == 1){
 
 
 
-
+mixnocroporpoll = readRDS("analysis/stanfits/floralfit_mixtus_nocomporpoll.rds")

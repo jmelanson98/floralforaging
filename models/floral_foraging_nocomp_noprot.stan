@@ -21,8 +21,7 @@ data {
 parameters {
   real <lower=0> rhomax;
   real rho0; 
-  real rho_fq; 
-  real rho_mp;
+  real rho_fq;
   real rho_config;
   real<lower=0> sigma;
   vector[K] eps;
