@@ -321,7 +321,8 @@ prep_stan_floralforaging = function(sibships1,
     filter(!is.na(floral_abundance)) %>%
     left_join(pollenprotein, by = "plant_code") %>%
     group_by(sample_id) %>%
-    summarize(max_protein = max(prot_scaled, na.rm = TRUE))
+    summarize(max_protein = max(prot_scaled, na.rm = TRUE),
+              max_protein_orig = max(prot, na.rm = TRUE))
   
   floral_df_wide = veg2[,colnames(veg2) %in% columnlist]
   floral_df_long2 = floral_df_wide %>%
@@ -340,7 +341,8 @@ prep_stan_floralforaging = function(sibships1,
     filter(!is.na(floral_abundance)) %>%
     left_join(pollenprotein, by = "plant_code") %>%
     group_by(sample_id) %>%
-    summarize(max_protein = max(prot_scaled, na.rm = TRUE))
+    summarize(max_protein = max(prot_scaled, na.rm = TRUE),
+              max_protein_orig = max(prot, na.rm = TRUE))
   
   floral_df_long = rbind(floral_df_long1, floral_df_long2)
   max_prot_long = rbind(max_prot_long1, max_prot_long2)
@@ -369,12 +371,12 @@ prep_stan_floralforaging = function(sibships1,
   
   # Get landscape metrics
   iji = landscapemetrics[landscapemetrics$metric == "iji",]
-  iji = iji[c("site_name", "value_scaled")]
-  colnames(iji) = c("site", "iji")
+  iji = iji[c("site_name", "value", "value_scaled")]
+  colnames(iji) = c("site", "iji_orig", "iji")
   
   comp = landscapemetrics[landscapemetrics$metric == "floweringpercent",]
-  comp = comp[c("site_name", "value_scaled", "year", "julian_date")]
-  colnames(comp) = c("site", "floweringpercent", "year", "julian_date")
+  comp = comp[c("site_name", "value", "value_scaled", "year", "julian_date")]
+  colnames(comp) = c("site", "floweringpercent_orig", "floweringpercent", "year", "julian_date")
   
   # Get nonzero counts
   counts1 = sibships1 %>%
