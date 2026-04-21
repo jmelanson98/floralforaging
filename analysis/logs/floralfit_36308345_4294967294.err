@@ -54,13 +54,3 @@ Joining with `by = join_by(site, year, julian_date)`
 Joining with `by = join_by(trapyear)`
 `summarise()` has grouped output by 'round'. You can override using the
 `.groups` argument.
-Warning messages:
-1: The largest R-hat is 1.84, indicating chains have not mixed.
-Running the chains for more iterations may help. See
-https://mc-stan.org/misc/warnings.html#r-hat 
-2: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
-Running the chains for more iterations may help. See
-https://mc-stan.org/misc/warnings.html#bulk-ess 
-3: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
-Running the chains for more iterations may help. See
-https://mc-stan.org/misc/warnings.html#tail-ess 

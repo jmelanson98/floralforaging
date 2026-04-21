@@ -54,3 +54,13 @@ Joining with `by = join_by(site, year, julian_date)`
 Joining with `by = join_by(trapyear)`
 `summarise()` has grouped output by 'round'. You can override using the
 `.groups` argument.
+Error in gzfile(file, mode) : cannot open the connection
+Calls: saveRDS -> gzfile
+In addition: Warning messages:
+1: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
+https://mc-stan.org/misc/warnings.html#bfmi-low 
+2: Examine the pairs() plot to diagnose sampling problems
+ 
+3: In gzfile(file, mode) :
+  cannot open compressed file 'analysis/stanfits/floralfit_mixtus_all.rds', probable reason 'No such file or directory'
+Execution halted
