@@ -11,11 +11,12 @@ library(readxl)
 library(ggplot2)
 library(rstan)
 library(sf)
-source("src/ff_helper.R")
 
 #bombus_path = "/Users/jenna1/Documents/UBC/bombus_project/"
 #bombus_path = "/Users/jenna1/Documents/bombus_project/"
 bombus_path = "~/projects/def-ckremen/melanson"
+setwd("~/projects/def-ckremen/melanson/floralforaging")
+source("src/ff_helper.R")
 
 # Get task ID from slurm manager
 task_id = as.integer(Sys.getenv("SLURM_ARRAY_TASK_ID"))
@@ -137,7 +138,7 @@ if (task_id == 1){
                         data = stan_data_imp, seed = 5838299,
                         chains = 4, cores = 4,
                         iter = 4000, warmup = 1000,
-                        init = init, verbose = TRUE)
+                        verbose = TRUE)
   saveRDS(fitimp_nocomp, "analysis/stanfits/floralfit_impatiens_nocomp.rds")
   
 } else if (task_id == 5){
@@ -162,7 +163,7 @@ if (task_id == 1){
                         data = stan_data_mix, seed = 5838299,
                         chains = 4, cores = 4,
                         iter = 4000, warmup = 1000,
-                        init = init, verbose = TRUE)
+                        verbose = TRUE)
   saveRDS(fitmix_nocomporpoll, "analysis/floralfit_mixtus_nocomporpoll.rds")
   
 } else if(task_id == 6){
@@ -187,7 +188,7 @@ if (task_id == 1){
                         data = stan_data_imp, seed = 5838299,
                         chains = 4, cores = 4,
                         iter = 4000, warmup = 1000,
-                        init = init, verbose = TRUE)
+                        verbose = TRUE)
   saveRDS(fitimp_nocomporpoll, "analysis/floralfit_impatiens_nocomporpoll.rds")
   
 } else if (task_id == 7){
