@@ -51,24 +51,36 @@ veg2022 = read.csv(paste0(bombus_path, "/raw_data/2022vegetationdata.csv"))
 veg2023 = read.csv(paste0(bombus_path, "/raw_data/2023vegetationdata.csv"))
 
 ### Make some plots of how we expect rho to change with rho1, rho2, rho3, rhomax
-# rho0 = 0
-# rho1 = 0.5
-# rho2 = -0.5
-# rho3 = -0.1
-# predictors = expand.grid(fq = seq(-3,3, by = 0.01),
-#                         lq = seq(-3,3, by = 0.01))
-# 
-# df_long = crossing(predictors) %>%
-#   mutate(
-#     rho0 = rho0,
-#     rho1 = rho1,
-#     rho2 = rho2,
-#     rho3 = rho3,
-#     rho = inv.logit(rho0+rho1*fq+rho2*lq+rho3*fq*lq))
-# 
-# ggplot(df_long, aes(x = fq, y = rho, color = lq)) +
-#   geom_point(size = 0.01) +
-#   theme_bw()
+rho0 = 0
+rho1 = 1
+rho2 = 0
+#rho3 = -0.1
+predictors = expand.grid(fq = seq(-3,3, by = 0.01),
+                        lq = seq(-3,3, by = 0.01))
+
+df_long = crossing(predictors) %>%
+  mutate(
+    rho0 = rho0,
+    rho1 = rho1,
+    rho2 = rho2,
+    rho = inv.logit(rho0+rho1*fq+rho2*lq))
+
+ggplot(df_long, aes(x = fq, y = rho)) +
+  geom_point(size = 0.01) +
+  theme_bw()
+
+rho1 = 0.5
+fq = c(-1, 0, 1)
+rho = inv.logit(rho0+rho1*fq)
+preds = expand.grid(rho = rho,
+                    distance = seq(0,3, by = 0.01))
+preds$visitation = exp(-preds$distance/preds$rho)
+preds$rho = as.factor(round(preds$rho, 2))
+
+ggplot(preds, aes(x = distance, y = visitation, colour = rho)) +
+  geom_line() +
+  theme_bw()
+
 
 ### Make params grid
 rho1 = c(0, 0.1, 0.2, 0.3, 0.4, 0.5)
