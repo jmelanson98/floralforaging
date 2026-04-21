@@ -14,7 +14,7 @@ library(raster)
 library(sf)
 library(landscapemetrics)
 
-bombus_path = "/Users/jenna1/Documents/bombus_project/"
+bombus_path = "/Users/jenna1/Documents/UBC/bombus_project/"
 
 #####################################################
 # Load and floral survey data
@@ -260,3 +260,42 @@ metricswocrops$site_name[metricswocrops$site_name == "westham_island"] = "W"
 metricswocrops$site_name[metricswocrops$site_name == "nicomekl_river"] = "NR"
 metricswocrops$site_name[metricswocrops$site_name == "harvey_road"] = "HR"
 write.csv(metricswocrops, "analysis/landscapemetrics_nocrops.csv")
+
+
+#######################################
+# Make figures
+#######################################
+rcl_matrix = rbind(
+  cbind(c(0, 13), 1),        # annual crops
+  cbind(c(1, 7, 9), 2),  # field margins
+  cbind(4, 3),           # fallow
+  cbind(5,4),   # forest
+  cbind(14,5), # seminatural grassland
+  cbind(17,6), # wetlands
+  cbind(2, 7), # blueberry
+  cbind(3, 8), # cranberry
+  cbind(12, 9),    # other perennials
+  cbind(c(6, 11), 10),        # managed grassy
+  cbind(15, 11),              # urban
+  cbind(c(10, 16), 12),      # water
+  cbind(8, 13)                # industrial
+)
+
+rcl_matrix_flowering = rbind(
+  cbind(c(4, 5, 7, 9, 14, 15, 17, 2), 1),
+  cbind(c(1, 2, 3, 6, 8, 10, 11, 12, 13, 16), 0))
+
+# buffer all points in the site and dissolve into one polygon
+site_buffer = fv_points %>%
+  st_buffer(500) %>%
+  st_union()
+
+# crop and mask raster to the buffered area
+site_vect   = vect(site_buffer)
+site_raster = crop(landscape_raster, site_vect) %>% mask(site_vect)
+
+# reclassify and crop for iji
+site_raster_rcl = classify(site_raster, rcl = rcl_matrix) %>%
+  mask(site_vect)
+site_raster_flowering = classify(site_raster, rcl = rcl_matrix_flowering) %>%
+  mask(site_vect)
